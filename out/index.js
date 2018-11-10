@@ -28,16 +28,18 @@ class SoundCloud {
     /**
      * Search videos on SoundCloud.
      * @param searchTerm What to search for on SoundCloud.
+     * @param author The author of the video.
      */
-    searchTracks(searchTerm) {
-        return this.search('tracks', searchTerm);
+    searchTracks(searchTerm, author) {
+        return this.search('tracks', searchTerm, author);
     }
     /**
      * Search playlists on SoundCloud.
      * @param searchTerm What to search for on SoundCloud.
+     * @param author The author of the playlist.
      */
-    searchPlaylists(searchTerm) {
-        return this.search('playlists', searchTerm);
+    searchPlaylists(searchTerm, author) {
+        return this.search('playlists', searchTerm, author);
     }
     /**
      * Get a track object from the ID of a track.
@@ -63,7 +65,7 @@ class SoundCloud {
             if (!id.track) {
                 return Promise.reject('Not a valid video url');
             }
-            return (yield this.searchTracks(id.track))[0];
+            return (yield this.searchTracks(id.track, id.author))[0];
         });
     }
     /**
@@ -76,7 +78,7 @@ class SoundCloud {
             if (!id.playlist) {
                 return Promise.reject('Not a valid playlist url');
             }
-            return (yield this.searchPlaylists(id.playlist))[0];
+            return (yield this.searchPlaylists(id.playlist, id.author))[0];
         });
     }
     getPlaylistTracks(playlistId) {
@@ -91,7 +93,7 @@ class SoundCloud {
             return tracks;
         });
     }
-    search(type, searchTerm) {
+    search(type, searchTerm, author) {
         return __awaiter(this, void 0, void 0, function* () {
             const results = yield util_1.request.api(type, {
                 q: encodeURIComponent(searchTerm),
@@ -99,6 +101,9 @@ class SoundCloud {
             });
             const items = [];
             results.forEach(item => {
+                if (author && item.user.username.toLowerCase() !== author.toLowerCase()) {
+                    return;
+                }
                 switch (type) {
                     case 'tracks':
                         items.push(new entities_1.Track(this, item));

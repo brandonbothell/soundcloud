@@ -1,6 +1,6 @@
 import { parse } from 'url'
 
-export function parseUrl (url: string): { track: string, playlist: string } {
+export function parseUrl (url: string): { track: string, playlist: string, author: string } {
   const parsed = parse(url, true)
   switch (parsed.hostname) {
     case 'www.soundcloud.com':
@@ -11,14 +11,14 @@ export function parseUrl (url: string): { track: string, playlist: string } {
       }
 
       if (parsed.path.includes('/sets/')) {
-        return { playlist: parsed.path.substring(parsed.path.indexOf('/sets/') + 6), track: null }
+        return { playlist: parsed.path.substring(parsed.path.indexOf('/sets/') + 6), track: null, author: parsed.path.substring(1, parsed.path.lastIndexOf('/')) }
       } else {
         if (parsed.path.lastIndexOf('/') === parsed.path.length - 1) {
           parsed.path = parsed.path.substring(0, parsed.path.length - 1)
         }
 
         const track = parsed.path.substring(parsed.path.lastIndexOf('/') + 1)
-        const response: { track: string, playlist: string } = { track, playlist: null }
+        const response: { track: string, playlist: string, author: string } = { track, playlist: null, author: parsed.path.substring(1, parsed.path.lastIndexOf('/')) }
 
         if (parsed.query.in) {
           const isIn = parsed.query.in as string
@@ -29,7 +29,7 @@ export function parseUrl (url: string): { track: string, playlist: string } {
       }
     }
     default:
-      return { track: null, playlist: null }
+      return { track: null, playlist: null, author: null }
   }
 }
 

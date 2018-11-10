@@ -19,17 +19,19 @@ export class SoundCloud {
   /**
    * Search videos on SoundCloud.
    * @param searchTerm What to search for on SoundCloud.
+   * @param author The author of the video.
    */
-  public searchTracks (searchTerm: string) {
-    return this.search('tracks', searchTerm) as Promise<Track[]>
+  public searchTracks (searchTerm: string, author?: string) {
+    return this.search('tracks', searchTerm, author) as Promise<Track[]>
   }
 
   /**
    * Search playlists on SoundCloud.
    * @param searchTerm What to search for on SoundCloud.
+   * @param author The author of the playlist.
    */
-  public searchPlaylists (searchTerm: string) {
-    return this.search('playlists', searchTerm) as Promise<Playlist[]>
+  public searchPlaylists (searchTerm: string, author?: string) {
+    return this.search('playlists', searchTerm, author) as Promise<Playlist[]>
   }
 
   /**
@@ -59,7 +61,7 @@ export class SoundCloud {
       return Promise.reject('Not a valid video url')
     }
 
-    return (await this.searchTracks(id.track))[0]
+    return (await this.searchTracks(id.track, id.author))[0]
   }
 
   /**
@@ -73,7 +75,7 @@ export class SoundCloud {
       return Promise.reject('Not a valid playlist url')
     }
 
-    return (await this.searchPlaylists(id.playlist))[0]
+    return (await this.searchPlaylists(id.playlist, id.author))[0]
   }
 
   public async getPlaylistTracks (playlistId: string) {
@@ -89,7 +91,7 @@ export class SoundCloud {
     return tracks
   }
 
-  private async search (type: 'tracks' | 'playlists', searchTerm: string): Promise<Track[] | Playlist[]> {
+  private async search (type: 'tracks' | 'playlists', searchTerm: string, author?: string): Promise<Track[] | Playlist[]> {
     const results = await request.api(type, {
       q: encodeURIComponent(searchTerm),
       client_id: this.clientId
@@ -98,6 +100,10 @@ export class SoundCloud {
     const items = []
 
     results.forEach(item => {
+      if (author && item.user.username.toLowerCase() !== author.toLowerCase()) {
+        return
+      }
+
       switch (type) {
         case 'tracks':
           items.push(new Track(this, item))

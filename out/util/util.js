@@ -11,14 +11,14 @@ function parseUrl(url) {
                 parsed.path = parsed.path.substring(0, parsed.path.length - 1);
             }
             if (parsed.path.includes('/sets/')) {
-                return { playlist: parsed.path.substring(parsed.path.indexOf('/sets/') + 6), track: null };
+                return { playlist: parsed.path.substring(parsed.path.indexOf('/sets/') + 6), track: null, author: parsed.path.substring(1, parsed.path.lastIndexOf('/')) };
             }
             else {
                 if (parsed.path.lastIndexOf('/') === parsed.path.length - 1) {
                     parsed.path = parsed.path.substring(0, parsed.path.length - 1);
                 }
                 const track = parsed.path.substring(parsed.path.lastIndexOf('/') + 1);
-                const response = { track, playlist: null };
+                const response = { track, playlist: null, author: parsed.path.substring(1, parsed.path.lastIndexOf('/')) };
                 if (parsed.query.in) {
                     const isIn = parsed.query.in;
                     response.playlist = isIn.substring(isIn.lastIndexOf('/') + 1);
@@ -27,7 +27,7 @@ function parseUrl(url) {
             }
         }
         default:
-            return { track: null, playlist: null };
+            return { track: null, playlist: null, author: null };
     }
 }
 exports.parseUrl = parseUrl;
