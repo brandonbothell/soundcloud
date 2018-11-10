@@ -58,7 +58,7 @@ export class SoundCloud {
     const id = parseUrl(url)
 
     if (!id.track) {
-      return Promise.reject('Not a valid video url')
+      return Promise.reject('Not a valid track url')
     }
 
     return (await this.searchTracks(id.track, id.author))[0]
@@ -105,7 +105,7 @@ export class SoundCloud {
         client_id: this.clientId
       })
 
-      const found = itemsApi.filter(track => track.permalink === searchTerm)
+      const found = itemsApi.filter(item => item.permalink === searchTerm)
 
       if (found.length > 0) {
         if (type === 'tracks') {

@@ -11,14 +11,14 @@ export function parseUrl (url: string): { track: string, playlist: string, autho
       }
 
       if (parsed.path.includes('/sets/')) {
-        return { playlist: parsed.path.substring(parsed.path.indexOf('/sets/') + 6), track: null, author: parsed.path.substring(1, parsed.path.lastIndexOf('/')) }
+        return { playlist: parsed.path.substring(parsed.path.indexOf('/sets/') + 6), track: null, author: parsed.path.substring(1, parsed.path.indexOf('/', 1)) }
       } else {
         if (parsed.path.lastIndexOf('/') === parsed.path.length - 1) {
           parsed.path = parsed.path.substring(0, parsed.path.length - 1)
         }
 
         const track = parsed.path.substring(parsed.path.lastIndexOf('/') + 1)
-        const response: { track: string, playlist: string, author: string } = { track, playlist: null, author: parsed.path.substring(1, parsed.path.lastIndexOf('/')) }
+        const response: { track: string, playlist: string, author: string } = { track, playlist: null, author: parsed.path.substring(1, parsed.path.indexOf('/', 1)) }
 
         if (parsed.query.in) {
           const isIn = parsed.query.in as string

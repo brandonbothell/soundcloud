@@ -63,7 +63,7 @@ class SoundCloud {
         return __awaiter(this, void 0, void 0, function* () {
             const id = util_1.parseUrl(url);
             if (!id.track) {
-                return Promise.reject('Not a valid video url');
+                return Promise.reject('Not a valid track url');
             }
             return (yield this.searchTracks(id.track, id.author))[0];
         });
@@ -105,7 +105,7 @@ class SoundCloud {
                 const itemsApi = yield util_1.request.api('users/' + userId + '/' + type, {
                     client_id: this.clientId
                 });
-                const found = itemsApi.filter(track => track.permalink === searchTerm);
+                const found = itemsApi.filter(item => item.permalink === searchTerm);
                 if (found.length > 0) {
                     if (type === 'tracks') {
                         found.forEach(item => items.push(new entities_1.Track(this, item)));
