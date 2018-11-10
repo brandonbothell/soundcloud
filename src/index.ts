@@ -116,7 +116,7 @@ export class SoundCloud {
         }
       }
 
-      if (items.length > 9) {
+      if (items.length > 0) {
         return items
       }
     }
