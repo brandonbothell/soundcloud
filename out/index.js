@@ -105,7 +105,7 @@ class SoundCloud {
                 const itemsApi = yield util_1.request.api('users/' + userId + '/' + type, {
                     client_id: this.clientId
                 });
-                const found = itemsApi.filter(track => track.title.toLowerCase().includes(searchTerm.toLowerCase()));
+                const found = itemsApi.filter(track => track.permalink === searchTerm);
                 if (found.length > 0) {
                     if (type === 'tracks') {
                         found.forEach(item => items.push(new entities_1.Track(this, item)));

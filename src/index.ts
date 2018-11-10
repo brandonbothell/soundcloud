@@ -105,7 +105,7 @@ export class SoundCloud {
         client_id: this.clientId
       })
 
-      const found = itemsApi.filter(track => track.title.toLowerCase().includes(searchTerm.toLowerCase()))
+      const found = itemsApi.filter(track => track.permalink === searchTerm)
 
       if (found.length > 0) {
         if (type === 'tracks') {
