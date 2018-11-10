@@ -95,14 +95,13 @@ export class SoundCloud {
     const items = []
 
     if (author) {
-      const user = (await request.api('resolve', {
+      const loc: string = (await request.api('resolve', {
         url: 'https://soundcloud.com/' + author,
         client_id: this.clientId
-      }))[0]
+      })).location
 
-      console.log(user.username)
-
-      const itemsApi: any[] = await request.api('users/' + user.id + '/' + type, {
+      const userId = loc.substring(loc.indexOf('users/') + 6, loc.indexOf('?'))
+      const itemsApi: any[] = await request.api('users/' + userId + '/' + type, {
         client_id: this.clientId
       })
 
@@ -122,7 +121,7 @@ export class SoundCloud {
     }
 
     const results = await request.api(type, {
-      q: encodeURIComponent(searchTerm),
+      q: searchTerm,
       client_id: this.clientId
     })
 

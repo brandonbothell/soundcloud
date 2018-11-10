@@ -97,12 +97,12 @@ class SoundCloud {
         return __awaiter(this, void 0, void 0, function* () {
             const items = [];
             if (author) {
-                const user = (yield util_1.request.api('users', {
-                    q: author,
+                const loc = (yield util_1.request.api('resolve', {
+                    url: 'https://soundcloud.com/' + author,
                     client_id: this.clientId
-                }))[0];
-                console.log(user.username);
-                const itemsApi = yield util_1.request.api('users/' + user.id + '/' + type, {
+                })).location;
+                const userId = loc.substring(loc.indexOf('users/') + 6, loc.indexOf('?'));
+                const itemsApi = yield util_1.request.api('users/' + userId + '/' + type, {
                     client_id: this.clientId
                 });
                 const found = itemsApi.filter(track => track.title.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -119,7 +119,7 @@ class SoundCloud {
                 }
             }
             const results = yield util_1.request.api(type, {
-                q: encodeURIComponent(searchTerm),
+                q: searchTerm,
                 client_id: this.clientId
             });
             results.forEach(item => {

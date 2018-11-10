@@ -95,7 +95,7 @@ function parseParams (params: Object) {
   let url = ''
 
   for (let param in params) {
-    url += (!url.includes('?') ? '?' : '&') + param + '=' + params[param]
+    url += (!url.includes('?') ? '?' : '&') + param + '=' + encodeURIComponent(params[param])
   }
 
   return url
