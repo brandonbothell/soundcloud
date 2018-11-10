@@ -114,7 +114,7 @@ class SoundCloud {
                         found.forEach(item => items.push(new entities_1.Playlist(this, item)));
                     }
                 }
-                if (items.length > 9) {
+                if (items.length > 0) {
                     return items;
                 }
             }

@@ -95,8 +95,8 @@ export class SoundCloud {
     const items = []
 
     if (author) {
-      const user = (await request.api('users', {
-        q: author,
+      const user = (await request.api('resolve', {
+        url: 'https://soundcloud.com/' + author,
         client_id: this.clientId
       }))[0]
 
