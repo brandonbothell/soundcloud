@@ -92,18 +92,39 @@ export class SoundCloud {
   }
 
   private async search (type: 'tracks' | 'playlists', searchTerm: string, author?: string): Promise<Track[] | Playlist[]> {
+    const items = []
+
+    if (author) {
+      const user = (await request.api('users', {
+        q: author,
+        client_id: this.clientId
+      }))[0]
+
+      const itemsApi: any[] = await request.api('users/' + user.id + '/' + type, {
+        client_id: this.clientId
+      })
+
+      const found = itemsApi.filter(track => track.title.toLowerCase().includes(searchTerm.toLowerCase()))
+
+      if (!found) {
+        return Promise.reject('Could not find any results.')
+      }
+
+      if (type === 'tracks') {
+        found.forEach(item => items.push(new Track(this, item)))
+      } else if (type === 'playlists') {
+        found.forEach(item => items.push(new Playlist(this, item)))
+      }
+
+      return items
+    }
+
     const results = await request.api(type, {
       q: encodeURIComponent(searchTerm),
       client_id: this.clientId
     })
 
-    const items = []
-
     results.forEach(item => {
-      if (author && item.user.username.toLowerCase() !== author.toLowerCase()) {
-        return
-      }
-
       switch (type) {
         case 'tracks':
           items.push(new Track(this, item))
@@ -112,7 +133,7 @@ export class SoundCloud {
           items.push(new Playlist(this, item))
           break
         default:
-          throw new Error('Type must be tracks or playlists')
+          return Promise.reject('Type must be tracks or playlists')
       }
     })
 

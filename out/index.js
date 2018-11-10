@@ -95,15 +95,32 @@ class SoundCloud {
     }
     search(type, searchTerm, author) {
         return __awaiter(this, void 0, void 0, function* () {
+            const items = [];
+            if (author) {
+                const user = (yield util_1.request.api('users', {
+                    q: author,
+                    client_id: this.clientId
+                }))[0];
+                const itemsApi = yield util_1.request.api('users/' + user.id + '/' + type, {
+                    client_id: this.clientId
+                });
+                const found = itemsApi.filter(track => track.title.toLowerCase().includes(searchTerm.toLowerCase()));
+                if (!found) {
+                    return Promise.reject('Could not find any results.');
+                }
+                if (type === 'tracks') {
+                    found.forEach(item => items.push(new entities_1.Track(this, item)));
+                }
+                else if (type === 'playlists') {
+                    found.forEach(item => items.push(new entities_1.Playlist(this, item)));
+                }
+                return items;
+            }
             const results = yield util_1.request.api(type, {
                 q: encodeURIComponent(searchTerm),
                 client_id: this.clientId
             });
-            const items = [];
             results.forEach(item => {
-                if (author && item.user.username.toLowerCase() !== author.toLowerCase()) {
-                    return;
-                }
                 switch (type) {
                     case 'tracks':
                         items.push(new entities_1.Track(this, item));
@@ -112,7 +129,7 @@ class SoundCloud {
                         items.push(new entities_1.Playlist(this, item));
                         break;
                     default:
-                        throw new Error('Type must be tracks or playlists');
+                        return Promise.reject('Type must be tracks or playlists');
                 }
             });
             return items;
