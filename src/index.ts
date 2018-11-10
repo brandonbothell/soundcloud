@@ -100,23 +100,25 @@ export class SoundCloud {
         client_id: this.clientId
       }))[0]
 
+      console.log(user.username)
+
       const itemsApi: any[] = await request.api('users/' + user.id + '/' + type, {
         client_id: this.clientId
       })
 
       const found = itemsApi.filter(track => track.title.toLowerCase().includes(searchTerm.toLowerCase()))
 
-      if (!found) {
-        return Promise.reject('Could not find any results.')
+      if (found.length > 0) {
+        if (type === 'tracks') {
+          found.forEach(item => items.push(new Track(this, item)))
+        } else if (type === 'playlists') {
+          found.forEach(item => items.push(new Playlist(this, item)))
+        }
       }
 
-      if (type === 'tracks') {
-        found.forEach(item => items.push(new Track(this, item)))
-      } else if (type === 'playlists') {
-        found.forEach(item => items.push(new Playlist(this, item)))
+      if (items.length > 9) {
+        return items
       }
-
-      return items
     }
 
     const results = await request.api(type, {

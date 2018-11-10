@@ -101,20 +101,22 @@ class SoundCloud {
                     q: author,
                     client_id: this.clientId
                 }))[0];
+                console.log(user.username);
                 const itemsApi = yield util_1.request.api('users/' + user.id + '/' + type, {
                     client_id: this.clientId
                 });
                 const found = itemsApi.filter(track => track.title.toLowerCase().includes(searchTerm.toLowerCase()));
-                if (!found) {
-                    return Promise.reject('Could not find any results.');
+                if (found.length > 0) {
+                    if (type === 'tracks') {
+                        found.forEach(item => items.push(new entities_1.Track(this, item)));
+                    }
+                    else if (type === 'playlists') {
+                        found.forEach(item => items.push(new entities_1.Playlist(this, item)));
+                    }
                 }
-                if (type === 'tracks') {
-                    found.forEach(item => items.push(new entities_1.Track(this, item)));
+                if (items.length > 9) {
+                    return items;
                 }
-                else if (type === 'playlists') {
-                    found.forEach(item => items.push(new entities_1.Playlist(this, item)));
-                }
-                return items;
             }
             const results = yield util_1.request.api(type, {
                 q: encodeURIComponent(searchTerm),
