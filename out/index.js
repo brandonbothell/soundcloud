@@ -53,60 +53,96 @@ class SoundCloud {
      * @param id The ID of the user.
      */
     getUser(id) {
-        return this.getItemById('user', id);
+        return this.getItemById('user', String(id));
     }
     /**
      * Get a track object from the ID of a track.
      * @param id The ID of the track.
      */
     getTrack(id) {
-        return this.getItemById('track', id);
+        return this.getItemById('track', String(id));
     }
     /**
      * Get a playlist object from the ID of a playlist.
      * @param id The ID of the playlist.
      */
     getPlaylist(id) {
-        return this.getItemById('playlist', id);
+        return this.getItemById('playlist', String(id));
     }
     /**
      * Get a user object from the url of a user.
      * @param url The url of the user.
      */
     getUserByUrl(url) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return this.resolve('user', url);
-        });
+        return this.resolve('user', url);
     }
     /**
      * Get a track object from the url of a track.
      * @param url The url of the track.
      */
     getTrackByUrl(url) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return this.resolve('track', url);
-        });
+        return this.resolve('track', url);
     }
     /**
      * Get a playlist object from the url of a playlist.
      * @param url The url of the playlist.
      */
     getPlaylistByUrl(url) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return this.resolve('playlist', url);
-        });
+        return this.resolve('playlist', url);
     }
-    getPlaylistTracks(playlistId) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const tracks = [];
-            const results = yield util_1.request.api('playlists/' + playlistId + '/tracks', {
-                client_id: this.clientId
-            });
-            results.forEach(track => {
-                tracks.push(new entities_1.Track(this, track));
-            });
-            return tracks;
-        });
+    /**
+     * Fetches a user's tracks.
+     * @param userId The ID of the user.
+     * @param pages The number of pages (of 50) to fetch. May fetch less, but never more pages.
+     * There may be more than 50 tracks if the resource isn't paginated.
+     */
+    getUserTracks(userId, pages = 1) {
+        return this.getSubresource('user', userId, 'tracks', pages);
+    }
+    /**
+     * Fetches a playlist's tracks.
+     * @param playlistId The ID of the playlist.
+     * @param pages The number of pages (of 50) to fetch. May fetch less, but never more pages.
+     * There may be more than 50 tracks if the resource isn't paginated.
+     */
+    getPlaylistTracks(playlistId, pages = 1) {
+        return this.getSubresource('playlist', playlistId, 'tracks', pages);
+    }
+    /**
+     * Fetches a user's followers.
+     * @param userId The ID of the user.
+     * @param pages The number of pages (of 50) to fetch. May fetch less, but never more pages.
+     * There may be more than 50 users if the resource isn't paginated.
+     */
+    getUserFollowers(userId, pages = 1) {
+        return this.getSubresource('user', userId, 'followers', pages);
+    }
+    /**
+     * Fetches a user's followings.
+     * @param userId The ID of the user.
+     * @param pages The number of pages (of 50) to fetch. May fetch less, but never more pages.
+     * There may be more than 50 users if the resource isn't paginated.
+     */
+    getUserFollowings(userId, pages = 1) {
+        return this.getSubresource('user', userId, 'followings', pages);
+    }
+    /**
+     * Fetches a user's favorites.
+     * @param userId The ID of the user.
+     * @param pages The number of pages (of 50) to fetch. May fetch less, but never more pages.
+     * There may be more than 50 tracks if the resource isn't paginated.
+     */
+    getUserFavorites(userId, pages = 1) {
+        return this.getSubresource('user', userId, 'favorites', pages);
+    }
+    /**
+     * Fetches the user's playlists.
+     * @param userId The ID of the user.
+     * @param pages The number of pages (of 50) to fetch. May fetch less, but never more pages.
+     * There may be more than 50 playlists if the resource isn't paginated.
+     */
+    getUserPlaylists(userId, pages = 1) {
+        return this.getSubresource('user', userId, 'playlists', pages);
     }
     search(type, searchTerm, author) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -119,17 +155,18 @@ class SoundCloud {
                 const itemsApi = yield util_1.request.api(loc, {
                     client_id: this.clientId
                 });
-                const found = itemsApi.filter(item => item.permalink === searchTerm);
-                if (found.length > 0) {
-                    if (type === 'tracks') {
-                        found.forEach(item => items.push(new entities_1.Track(this, item)));
-                    }
-                    else if (type === 'playlists') {
-                        found.forEach(item => items.push(new entities_1.Playlist(this, item)));
-                    }
-                    else {
-                        return Promise.reject('Incompatible type with author: ' + type);
-                    }
+                let found = itemsApi.filter(item => item.permalink === searchTerm);
+                if (found.length === 0) {
+                    found = itemsApi.filter(item => item.permalink.includes(searchTerm));
+                }
+                if (type === 'tracks') {
+                    found.forEach(item => items.push(new entities_1.Track(this, item)));
+                }
+                else if (type === 'playlists') {
+                    found.forEach(item => items.push(new entities_1.Playlist(this, item)));
+                }
+                else {
+                    return Promise.reject('Incompatible type with author: ' + type);
                 }
                 if (items.length > 0) {
                     return items;
@@ -192,6 +229,56 @@ class SoundCloud {
                 default:
                     return Promise.reject('Type must be a track, playlist, or user');
             }
+        });
+    }
+    getSubresource(item, itemId, subresource, pages = 1) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const items = [];
+            let results = yield util_1.request.api(item + 's/' + itemId + '/' + subresource, {
+                client_id: this.clientId
+            });
+            if (results.collection) {
+                if (pages <= 1) {
+                    results = results.collection;
+                }
+                else {
+                    for (let i = 0; i < pages - 1; i++) {
+                        if (results.next_href) {
+                            results.collection.push(...((yield util_1.request.get(results.next_href)).collection));
+                        }
+                        else {
+                            break;
+                        }
+                    }
+                    results = results.collection;
+                }
+            }
+            results.forEach(item => {
+                switch (subresource) {
+                    case 'favorites':
+                    case 'tracks':
+                        items.push(new entities_1.Track(this, item));
+                        break;
+                    case 'playlists':
+                        items.push(new entities_1.Playlist(this, item));
+                        break;
+                    case 'followings':
+                    case 'followers':
+                        items.push(new entities_1.User(this, item));
+                        break;
+                    case 'web-profiles':
+                        items.push({
+                            id: item.id,
+                            service: item.service,
+                            title: item.title,
+                            url: item.url,
+                            username: item.username,
+                            dateCreated: new Date(item.created_at)
+                        });
+                        break;
+                }
+            });
+            return items;
         });
     }
 }

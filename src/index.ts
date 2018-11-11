@@ -1,5 +1,5 @@
 import { Track, Playlist, User } from './entities'
-import { parseUrl, request } from './util'
+import { request } from './util'
 export * from './entities'
 
 /**
@@ -46,31 +46,31 @@ export class SoundCloud {
    * Get a user object from the ID of a user.
    * @param id The ID of the user.
    */
-  public getUser (id: string) {
-    return this.getItemById('user', id) as Promise<User>
+  public getUser (id: string | number) {
+    return this.getItemById('user', String(id)) as Promise<User>
   }
 
   /**
    * Get a track object from the ID of a track.
    * @param id The ID of the track.
    */
-  public getTrack (id: string) {
-    return this.getItemById('track', id) as Promise<Track>
+  public getTrack (id: string | number) {
+    return this.getItemById('track', String(id)) as Promise<Track>
   }
 
   /**
    * Get a playlist object from the ID of a playlist.
    * @param id The ID of the playlist.
    */
-  public getPlaylist (id: string) {
-    return this.getItemById('playlist', id) as Promise<Playlist>
+  public getPlaylist (id: string | number) {
+    return this.getItemById('playlist', String(id)) as Promise<Playlist>
   }
 
   /**
    * Get a user object from the url of a user.
    * @param url The url of the user.
    */
-  public async getUserByUrl (url: string) {
+  public getUserByUrl (url: string) {
     return this.resolve('user', url) as Promise<User>
   }
 
@@ -78,7 +78,7 @@ export class SoundCloud {
    * Get a track object from the url of a track.
    * @param url The url of the track.
    */
-  public async getTrackByUrl (url: string) {
+  public getTrackByUrl (url: string) {
     return this.resolve('track', url) as Promise<Track>
   }
 
@@ -86,21 +86,68 @@ export class SoundCloud {
    * Get a playlist object from the url of a playlist.
    * @param url The url of the playlist.
    */
-  public async getPlaylistByUrl (url: string) {
+  public getPlaylistByUrl (url: string) {
     return this.resolve('playlist', url) as Promise<Playlist>
   }
 
-  public async getPlaylistTracks (playlistId: string) {
-    const tracks: Track[] = []
-    const results = await request.api('playlists/' + playlistId + '/tracks', {
-      client_id: this.clientId
-    })
+  /**
+   * Fetches a user's tracks.
+   * @param userId The ID of the user.
+   * @param pages The number of pages (of 50) to fetch. May fetch less, but never more pages.
+   * There may be more than 50 tracks if the resource isn't paginated.
+   */
+  public getUserTracks (userId: string | number, pages: number = 1) {
+    return this.getSubresource('user', userId, 'tracks', pages) as Promise<Track[]>
+  }
 
-    results.forEach(track => {
-      tracks.push(new Track(this, track))
-    })
+  /**
+   * Fetches a playlist's tracks.
+   * @param playlistId The ID of the playlist.
+   * @param pages The number of pages (of 50) to fetch. May fetch less, but never more pages.
+   * There may be more than 50 tracks if the resource isn't paginated.
+   */
+  public getPlaylistTracks (playlistId: string | number, pages: number = 1) {
+    return this.getSubresource('playlist', playlistId, 'tracks', pages) as Promise<Track[]>
+  }
 
-    return tracks
+  /**
+   * Fetches a user's followers.
+   * @param userId The ID of the user.
+   * @param pages The number of pages (of 50) to fetch. May fetch less, but never more pages.
+   * There may be more than 50 users if the resource isn't paginated.
+   */
+  public getUserFollowers (userId: string | number, pages: number = 1) {
+    return this.getSubresource('user', userId, 'followers', pages) as Promise<User[]>
+  }
+
+  /**
+   * Fetches a user's followings.
+   * @param userId The ID of the user.
+   * @param pages The number of pages (of 50) to fetch. May fetch less, but never more pages.
+   * There may be more than 50 users if the resource isn't paginated.
+   */
+  public getUserFollowings (userId: string | number, pages: number = 1) {
+    return this.getSubresource('user', userId, 'followings', pages) as Promise<User[]>
+  }
+
+  /**
+   * Fetches a user's favorites.
+   * @param userId The ID of the user.
+   * @param pages The number of pages (of 50) to fetch. May fetch less, but never more pages.
+   * There may be more than 50 tracks if the resource isn't paginated.
+   */
+  public getUserFavorites (userId: string | number, pages: number = 1) {
+    return this.getSubresource('user', userId, 'favorites', pages) as Promise<Track[]>
+  }
+
+  /**
+   * Fetches the user's playlists.
+   * @param userId The ID of the user.
+   * @param pages The number of pages (of 50) to fetch. May fetch less, but never more pages.
+   * There may be more than 50 playlists if the resource isn't paginated.
+   */
+  public getUserPlaylists (userId: string | number, pages: number = 1) {
+    return this.getSubresource('user', userId, 'playlists', pages) as Promise<Playlist[]>
   }
 
   private async search (type: 'tracks' | 'playlists' | 'users', searchTerm: string, author?: string): Promise<Track[] | Playlist[] | User[]> {
@@ -116,16 +163,18 @@ export class SoundCloud {
         client_id: this.clientId
       })
 
-      const found = itemsApi.filter(item => item.permalink === searchTerm)
+      let found = itemsApi.filter(item => item.permalink === searchTerm)
 
-      if (found.length > 0) {
-        if (type === 'tracks') {
-          found.forEach(item => items.push(new Track(this, item)))
-        } else if (type === 'playlists') {
-          found.forEach(item => items.push(new Playlist(this, item)))
-        } else {
-          return Promise.reject('Incompatible type with author: ' + type)
-        }
+      if (found.length === 0) {
+        found = itemsApi.filter(item => item.permalink.includes(searchTerm))
+      }
+
+      if (type === 'tracks') {
+        found.forEach(item => items.push(new Track(this, item)))
+      } else if (type === 'playlists') {
+        found.forEach(item => items.push(new Playlist(this, item)))
+      } else {
+        return Promise.reject('Incompatible type with author: ' + type)
       }
 
       if (items.length > 0) {
@@ -195,4 +244,57 @@ export class SoundCloud {
         return Promise.reject('Type must be a track, playlist, or user')
     }
   }
+
+  private async getSubresource (item: 'track' | 'playlist' | 'user', itemId: string | number, subresource: Subresource, pages: number = 1) {
+    const items = []
+    let results = await request.api(item + 's/' + itemId + '/' + subresource, {
+      client_id: this.clientId
+    })
+
+    if (results.collection) {
+      if (pages <= 1) {
+        results = results.collection
+      } else {
+        for (let i = 0; i < pages - 1; i++) {
+          if (results.next_href) {
+            results.collection.push(...((await request.get(results.next_href)).collection))
+          } else {
+            break
+          }
+        }
+
+        results = results.collection
+      }
+    }
+
+    results.forEach(item => {
+      switch (subresource) {
+        case 'favorites':
+        case 'tracks':
+          items.push(new Track(this, item))
+          break
+        case 'playlists':
+          items.push(new Playlist(this, item))
+          break
+        case 'followings':
+        case 'followers':
+          items.push(new User(this, item))
+          break
+        case 'web-profiles':
+          items.push({
+            id: item.id,
+            service: item.service,
+            title: item.title,
+            url: item.url,
+            username: item.username,
+            dateCreated: new Date(item.created_at)
+          })
+          break
+      }
+    })
+
+    return items
+  }
 }
+
+type Subresource = 'tracks' | 'playlists' | 'followings' | 'followers' | 'favorites' | 'web-profiles'

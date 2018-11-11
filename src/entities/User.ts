@@ -1,4 +1,4 @@
-import { SoundCloud } from '..'
+import { SoundCloud, Track, Playlist } from '..'
 
 export class User {
 
@@ -139,6 +139,40 @@ export class User {
    */
   public commentsCount: number
 
+  /**
+   * The user's tracks. Only available after calling `User#fetchTracks`.
+   */
+  public tracks: Track[]
+
+  /**
+   * The user's playlists. Only available after calling `User#fetchPlaylists`.
+   */
+  public playlists: Playlist[]
+
+  /**
+   * The user's followings. Only available after calling `User#fetchFollowings`.
+   */
+  public followings: User[]
+
+  /**
+   * The user's followers. Only available after calling `User#fetchFollowers`.
+   */
+  public followers: User[]
+
+  /**
+   * The user's favorites. Only available after calling `User#fetchFavorites`.
+   */
+  public favorites: Track[]
+
+  public connections: {
+    id: number,
+    service: string,
+    title: string,
+    url: string,
+    username: string,
+    dateCreated: Date
+  }[]
+
   constructor (soundcloud: SoundCloud, data: any) {
     this.soundcloud = soundcloud
     this.data = data
@@ -184,5 +218,63 @@ export class User {
     }
 
     return this
+  }
+
+  /**
+   * Fetches the user. Only useful if you want updated user info.
+   */
+  async fetch () {
+    const user = await this.soundcloud.getUser(this.id)
+    return Object.assign(this, user)
+  }
+
+  /**
+   * Fetches the user's tracks.
+   * @param pages The number of pages (of 50) to fetch. May fetch less, but never more pages.
+   * There may be more than 50 tracks if the resource isn't paginated.
+   */
+  async fetchTracks (pages: number = 1) {
+    this.tracks = await this.soundcloud.getUserTracks(this.id, pages)
+    return this.tracks
+  }
+
+  /**
+   * Fetches the user's followers.
+   * @param pages The number of pages (of 50) to fetch. May fetch less, but never more pages.
+   * There may be more than 50 users if the resource isn't paginated.
+   */
+  async fetchFollowers (pages: number = 1) {
+    this.followers = await this.soundcloud.getUserFollowers(this.id, pages)
+    return this.followers
+  }
+
+  /**
+   * Fetches the user's followings.
+   * @param pages The number of pages (of 50) to fetch. May fetch less, but never more pages.
+   * There may be more than 50 users if the resource isn't paginated.
+   */
+  async fetchFollowings (pages: number = 1) {
+    this.followings = await this.soundcloud.getUserFollowings(this.id, pages)
+    return this.followings
+  }
+
+  /**
+   * Fetches the user's favorites.
+   * @param pages The number of pages (of 50) to fetch. May fetch less, but never more pages.
+   * There may be more than 50 tracks if the resource isn't paginated.
+   */
+  async fetchFavorites (pages: number = 1) {
+    this.favorites = await this.soundcloud.getUserFavorites(this.id, pages)
+    return this.favorites
+  }
+
+  /**
+   * Fetches the user's playlists.
+   * @param pages The number of pages (of 50) to fetch. May fetch less, but never more pages.
+   * There may be more than 50 playlists if the resource isn't paginated.
+   */
+  async fetchPlaylists (pages: number = 1) {
+    this.playlists = await this.soundcloud.getUserPlaylists(this.id, pages)
+    return this.playlists
   }
 }
