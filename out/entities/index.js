@@ -5,3 +5,4 @@ function __export(m) {
 Object.defineProperty(exports, "__esModule", { value: true });
 __export(require("./Track"));
 __export(require("./Playlist"));
+__export(require("./User"));

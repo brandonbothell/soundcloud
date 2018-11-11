@@ -3,9 +3,12 @@ import { IncomingMessage, RequestOptions } from 'http'
 import { parse as parseUrl } from 'url'
 
 export const request = {
-  api: (subUrl: string, params: Object): Promise<any> => {
+  api: (subUrl: string, params?: Object): Promise<any> => {
     const url = 'https://api.soundcloud.com' + (subUrl.startsWith('/') ? subUrl : '/' + subUrl) + parseParams(params)
     return get(url)
+  },
+  get: (url: string, params?: Object): Promise<any> => {
+    return get(url + parseParams(params))
   }
 }
 

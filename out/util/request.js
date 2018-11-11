@@ -6,6 +6,9 @@ exports.request = {
     api: (subUrl, params) => {
         const url = 'https://api.soundcloud.com' + (subUrl.startsWith('/') ? subUrl : '/' + subUrl) + parseParams(params);
         return get(url);
+    },
+    get: (url, params) => {
+        return get(url + parseParams(params));
     }
 };
 function get(url) {

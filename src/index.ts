@@ -1,4 +1,4 @@
-import { Track, Playlist } from './entities'
+import { Track, Playlist, User } from './entities'
 import { parseUrl, request } from './util'
 export * from './entities'
 
@@ -14,6 +14,14 @@ export class SoundCloud {
    */
   constructor (clientId: string) {
     this.clientId = clientId
+  }
+
+  /**
+   * Search users on SoundCloud.
+   * @param username What to search for on SoundCloud.
+   */
+  public searchUsers (username: string) {
+    return this.search('users', username) as Promise<User[]>
   }
 
   /**
@@ -35,6 +43,14 @@ export class SoundCloud {
   }
 
   /**
+   * Get a user object from the ID of a user.
+   * @param id The ID of the user.
+   */
+  public getUser (id: string) {
+    return this.getItemById('user', id) as Promise<User>
+  }
+
+  /**
    * Get a track object from the ID of a track.
    * @param id The ID of the track.
    */
@@ -51,17 +67,19 @@ export class SoundCloud {
   }
 
   /**
+   * Get a user object from the url of a user.
+   * @param url The url of the user.
+   */
+  public async getUserByUrl (url: string) {
+    return this.resolve('user', url) as Promise<User>
+  }
+
+  /**
    * Get a track object from the url of a track.
    * @param url The url of the track.
    */
   public async getTrackByUrl (url: string) {
-    const id = parseUrl(url)
-
-    if (!id.track) {
-      return Promise.reject('Not a valid track url')
-    }
-
-    return (await this.searchTracks(id.track, id.author))[0]
+    return this.resolve('track', url) as Promise<Track>
   }
 
   /**
@@ -69,13 +87,7 @@ export class SoundCloud {
    * @param url The url of the playlist.
    */
   public async getPlaylistByUrl (url: string) {
-    const id = parseUrl(url)
-
-    if (!id.playlist) {
-      return Promise.reject('Not a valid playlist url')
-    }
-
-    return (await this.searchPlaylists(id.playlist, id.author))[0]
+    return this.resolve('playlist', url) as Promise<Playlist>
   }
 
   public async getPlaylistTracks (playlistId: string) {
@@ -91,17 +103,16 @@ export class SoundCloud {
     return tracks
   }
 
-  private async search (type: 'tracks' | 'playlists', searchTerm: string, author?: string): Promise<Track[] | Playlist[]> {
+  private async search (type: 'tracks' | 'playlists' | 'users', searchTerm: string, author?: string): Promise<Track[] | Playlist[] | User[]> {
     const items = []
 
     if (author) {
       const loc: string = (await request.api('resolve', {
-        url: 'https://soundcloud.com/' + author,
+        url: 'https://soundcloud.com/' + author + '/' + type === 'tracks' ? type : type === 'playlists' ? 'sets' : undefined,
         client_id: this.clientId
       })).location
 
-      const userId = loc.substring(loc.indexOf('users/') + 6, loc.indexOf('?'))
-      const itemsApi: any[] = await request.api('users/' + userId + '/' + type, {
+      const itemsApi: any[] = await request.api(loc, {
         client_id: this.clientId
       })
 
@@ -112,6 +123,8 @@ export class SoundCloud {
           found.forEach(item => items.push(new Track(this, item)))
         } else if (type === 'playlists') {
           found.forEach(item => items.push(new Playlist(this, item)))
+        } else {
+          return Promise.reject('Incompatible type with author: ' + type)
         }
       }
 
@@ -133,6 +146,9 @@ export class SoundCloud {
         case 'playlists':
           items.push(new Playlist(this, item))
           break
+        case 'users':
+          items.push(new User(this, item))
+          break
         default:
           return Promise.reject('Type must be tracks or playlists')
       }
@@ -141,26 +157,42 @@ export class SoundCloud {
     return items
   }
 
-  private async getItemById (type: 'track' | 'playlist', id: string): Promise<Track | Playlist> {
+  private async getItemById (type: 'track' | 'playlist' | 'user', id: string): Promise<Track | Playlist | User> {
     let result
 
-    if (type === 'track') {
-      result = await request.api('tracks/' + id, {
-        client_id: this.clientId
-      })
-    } else if (type === 'playlist') {
-      result = await request.api('playlists/' + id, {
-        client_id: this.clientId
-      })
-    }
+    result = await request.api(type + 's/' + id, {
+      client_id: this.clientId
+    })
 
     switch (type) {
       case 'track':
         return new Track(this, result)
       case 'playlist':
         return new Playlist(this, result)
+      case 'user':
+        return new User(this, result)
       default:
-        throw new Error('Type must be a track or playlist')
+        return Promise.reject('Type must be a track, playlist, or user')
+    }
+  }
+
+  private async resolve (type: 'track' | 'playlist' | 'user', url: string): Promise<Track | Playlist | User> {
+    const loc: string = (await request.api('resolve', {
+      url,
+      client_id: this.clientId
+    })).location
+
+    const result = await request.get(loc)
+
+    switch (type) {
+      case 'track':
+        return new Track(this, result)
+      case 'playlist':
+        return new Playlist(this, result)
+      case 'user':
+        return new User(this, result)
+      default:
+        return Promise.reject('Type must be a track, playlist, or user')
     }
   }
 }
