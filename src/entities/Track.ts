@@ -76,11 +76,6 @@ export class Track {
   public streamUrl: string
 
   /**
-   * The number of likes the track has.
-   */
-  public likes: number
-
-  /**
    * The number of times this track has been favorited.
    */
   public favorites: number
@@ -110,7 +105,6 @@ export class Track {
     this.minutes = Math.floor(this._length / 1000 / 60)
     this.seconds = Number((60 * ((this._length / 1000 / 60) % 1)).toFixed(2))
 
-    this.likes = data.likes_count
     this.id = data.id
 
     this.title = data.title

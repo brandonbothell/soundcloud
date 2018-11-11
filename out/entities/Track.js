@@ -25,7 +25,6 @@ class Track {
         this._length = data.duration;
         this.minutes = Math.floor(this._length / 1000 / 60);
         this.seconds = Number((60 * ((this._length / 1000 / 60) % 1)).toFixed(2));
-        this.likes = data.likes_count;
         this.id = data.id;
         this.title = data.title;
         this.description = data.description;
